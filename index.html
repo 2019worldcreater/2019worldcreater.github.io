@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="JS/Move.js"></script>
+    <style>
+        body{ background: #CCC;}
+        #moveDiv{width:90px; height: 90px; background: red; position: absolute; border: none;}
+        #shoot{width: 10%; height: 20%; position: absolute; top: -20%; left: 45%;
+            background-color: black;}
+        .bullet{width: 8px; height: 9px; position: fixed; background-color: black;}
+    </style>
+    <script>
+        //37
+        var timer = null;  //移动计时器
+        var code  =  -1;  //最新的按键对应的按钮码
+        var isOver = false;  //是否到达边界
+
+        window.onload = function(){
+            var div1 = document.getElementById('moveDiv');
+        };
+
+        document.onkeyup = function(ev){
+            //需要解决同时按下多个键，上一个键放开导致下一个键触发的定时器失效导致卡顿，任意按键都能触发
+            var Event = ev || event;
+            if(Event.keyCode === code){ //所有按键都放开时才行
+                clearInterval(timer);
+                code = -1;
+            }
+        };
+
+        document.onkeydown = function (ev) {
+            var Event = ev || event;
+            var keyCode = Event.keyCode;  //按键码
+            isOver = false;
+            if(keyCode == code)  //手指按着不动也算onkeydown，所以同样的key直接返回就行
+                return;
+            var div1 = document.getElementById('moveDiv');
+            var speed = 2; //速度
+            var func = null;  //移动函数
+            var isMove = true; //是方向键吗
+
+            function Clear() {  //收盘工作
+                isOver = true;
+                clearInterval(timer);
+            }
+
+            //对方向键的处理
+            if(keyCode === 37){  // 左方向键 ←
+                func =  function () {
+                    if(div1.offsetLeft <= 0){  //左边界
+                       Clear();
+                       return;
+                    }
+                    div1.style.left = div1.offsetLeft - speed + 'px';
+                };
+            }else if(keyCode === 38){ // 上方向键↑
+                func =  function () {
+                    if(div1.offsetTop <= 0){
+                        Clear();
+                        return;
+                    }
+                    div1.style.top = div1.offsetTop - speed + 'px';
+                };
+            }else if(keyCode === 39){  //右 →
+                func =  function () {
+                    if((div1.offsetLeft + div1.offsetWidth) >= document.documentElement.clientWidth){
+                        //窗体宽度和高度是有兼容问题的，并不一定是这样
+                        Clear();
+                        return;
+                    }
+                    div1.style.left = div1.offsetLeft + speed + 'px';
+                };
+            }else if(keyCode === 40){ //下 ↓
+                func =  function () {
+                    if((div1.offsetTop + div1.offsetHeight) >= document.documentElement.clientHeight){
+                        Clear();
+                        return;
+                    }
+                    div1.style.top = div1.offsetTop + speed + 'px';
+                };
+            }else{
+                isMove = false;
+            }
+
+
+            //按下空格，放射炮弹
+            if(keyCode === 32){
+               var bullet = CreateBullet();
+               document.body.appendChild(bullet); //加入
+               Shoot(bullet); //发射
+            }
+
+
+            if(keyCode != code && isMove){  //新的按键按下时
+                clearInterval(timer);
+                if(!isOver){  //没到边界
+                    func(); //计时器有延迟的
+                    timer = setInterval(func, 1);  //计时器
+                    //主要解决连续按着不动，实际上会有卡顿，你应该注意过一个现象：
+                    //当你连续按着一个键不放时，第一个字符出来后需等上一个间隔才会出第二个
+                }
+                code = keyCode;
+            }
+        };
+
+        function CreateBullet() {
+            var shoot = document.getElementById('shoot');
+            var main = document.getElementById('moveDiv');
+            var bullet = document.createElement('div');
+            bullet.className = "bullet";
+            //注意：offset的值是相对于其定位元素而言的，在这shoot的offset是相对于其父元素的边界而言
+            bullet.style.top = main.offsetTop - shoot.offsetHeight + 'px'; //上是-
+            bullet.style.left = main.offsetLeft + shoot.offsetLeft + 'px';
+            return bullet;
+        }
+
+        function Shoot(bullet) {
+            bullet.timer = setInterval(function () {
+                if(bullet.offsetTop <= 0){
+                    clearInterval(bullet.timer);
+                    document.body.removeChild(bullet); //移出
+                }
+                bullet.style.top = bullet.offsetTop - 1 + 'px'; //往上走
+            }, 3);
+        }
+    </script>
+</head>
+<body>
+<div id="moveDiv">
+    <div id="shoot"></div>
+</div>
+</body>
+</html>
